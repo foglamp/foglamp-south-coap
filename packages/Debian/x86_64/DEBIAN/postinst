@@ -28,7 +28,7 @@
 set -e
 
 install_deps () {
-    pip3 install -Ir /usr/local/foglamp/python/requirements-coap.txt
+    pip3 install -Ir /usr/local/foglamp/python/requirements-coap.txt --no-cache-dir
 }
 
 set_files_ownership () {
