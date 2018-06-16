@@ -68,6 +68,7 @@ done
 
 # If the architecture has not been defined, then the script is complete
 if [[ "$architecture" == "none" ]]; then
+  # echo "${usage}"
   exit 0
 fi
 
@@ -111,8 +112,6 @@ cd "${package_name}"
 cp -R ${GIT_ROOT}/packages/Debian/${architecture}/* .
 sed -i "s/Version: 0.0/Version: $version/g" DEBIAN/control
 sed -i "s/Depends: foglamp/Depends: foglamp (=$foglamp_version)/g" DEBIAN/control
-
-pip3 install -Ir ${GIT_ROOT}/python/requirements-coap.txt
 
 mkdir -p usr/local/foglamp
 cd usr/local/foglamp
