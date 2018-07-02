@@ -175,7 +175,7 @@ async def test_plugin__stop(mocker, unused_port, loop):
     # THEN
     assert 2 == log_info.call_count
     calls = [call('CoAP listener started on port {} with uri sensor-values'.format(config['port']['value'])),
-             call('Stopping South COAP plugin...')]
+             call('Stopping South CoAP plugin...')]
     log_info.assert_has_calls(calls, any_order=True)
     assert 0 == log_exception.call_count
 
@@ -204,7 +204,7 @@ async def test_plugin_shutdown(mocker, unused_port, loop):
     # THEN
     assert 3 == log_info.call_count
     calls = [call('CoAP listener started on port {} with uri sensor-values'.format(config['port']['value'])),
-             call('Stopping South COAP plugin...'),
+             call('Stopping South CoAP plugin...'),
              call('CoAP plugin shut down.')]
     log_info.assert_has_calls(calls, any_order=True)
     assert 0 == log_exception.call_count

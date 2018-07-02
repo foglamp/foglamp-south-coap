@@ -75,7 +75,7 @@ def plugin_init(config):
     """ Registers CoAP handler to accept sensor readings
 
     Args:
-        config: JSON configuration document for the South device configuration category
+        config: JSON configuration document for the South plugin configuration category
     Returns:
         handle: JSON object to be used in future calls to the plugin
     Raises:
@@ -85,8 +85,8 @@ def plugin_init(config):
 
 
 def plugin_start(handle):
-    """ Starts the South device ingress process.
-        Used only for South device plugins that support async IO.
+    """ Starts the South service ingress process.
+        Used only for plugins that support async IO.
 
     Args:
         handle: handle returned by the plugin initialisation call
@@ -115,7 +115,7 @@ async def _start_aiocoap(uri, port):
 def plugin_reconfigure(handle, new_config):
     """  Reconfigures the plugin
 
-    it should be called when the configuration of the plugin is changed during the operation of the South device service;
+    it should be called when the configuration of the plugin is changed during the operation of the South service;
     The new configuration category should be passed.
 
     Args:
@@ -125,7 +125,7 @@ def plugin_reconfigure(handle, new_config):
         new_handle: new handle to be used in the future calls
     Raises:
     """
-    _LOGGER.info("Old config for COAP plugin {} \n new config {}".format(handle, new_config))
+    _LOGGER.info("Old config for CoAP plugin {} \n new config {}".format(handle, new_config))
 
     # Find diff between old config and new config
     diff = utils.get_diff(handle, new_config)
@@ -135,7 +135,7 @@ def plugin_reconfigure(handle, new_config):
         _plugin_stop(handle)
         new_handle = plugin_init(new_config)
         new_handle['restart'] = 'yes'
-        _LOGGER.info("Restarting COAP plugin due to change in configuration keys [{}]".format(', '.join(diff)))
+        _LOGGER.info("Restarting CoAP plugin due to change in configuration keys [{}]".format(', '.join(diff)))
     else:
         new_handle = copy.deepcopy(handle)
         new_handle['restart'] = 'no'
@@ -143,23 +143,16 @@ def plugin_reconfigure(handle, new_config):
 
 
 def _plugin_stop(handle):
-    """ Stops the plugin doing required cleanup, to be called prior to the South device service being shut down.
-
-    Args:
-        handle: handle returned by the plugin initialisation call
-    Returns:
-    Raises:
-    """
-    _LOGGER.info('Stopping South COAP plugin...')
+    _LOGGER.info('Stopping South CoAP plugin...')
     try:
         asyncio.ensure_future(aiocoap_ctx.shutdown())
     except Exception as ex:
-        _LOGGER.exception('Error in shutting down COAP plugin {}'.format(str(ex)))
+        _LOGGER.exception('Error in shutting down CoAP plugin {}'.format(str(ex)))
         raise
 
 
 def plugin_shutdown(handle):
-    """ Shutdowns the plugin doing required cleanup, to be called prior to the South device service being shut down.
+    """ Shutdowns the plugin doing required cleanup, to be called prior to the South service being shut down.
 
     Args:
         handle: handle returned by the plugin initialisation call
@@ -202,7 +195,6 @@ class CoAPIngest(aiocoap.resource.Resource):
         # Therefore, Exception is caught instead of specific exceptions.
 
         code = aiocoap.numbers.codes.Code.VALID
-        # TODO: Decide upon the correct format of message
         message = ''
         try:
             if not Ingest.is_available():
