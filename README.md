@@ -48,7 +48,7 @@ total 12
 drwxrwxr-x 4 foglamp foglamp 4096 Jul 11 16:24 foglamp-south-coap-1.0.0-x86_64
 -rw-r--r-- 1 foglamp foglamp 4574 Jul 11 16:24 foglamp-south-coap-1.0.0-x86_64.deb
 $
-
+```
 
 If you execute the ``make_deb`` command again, you will see:
 
@@ -78,6 +78,7 @@ drwxrwxr-x 4 foglamp foglamp 4096 Jul 11 16:24 foglamp-south-coap-1.0.0-x86_64.0
 -rw-r--r-- 1 foglamp foglamp 4574 Jul 11 16:24 foglamp-south-coap-1.0.0-x86_64.deb.0001
 $
 ```
+
 ... where the previous build is now marked with the suffix *.0001*.
 
 
@@ -92,3 +93,4 @@ If you wish to manually install this plugin you will require two Python packages
 sudo pip3 install --upgrade "aiocoap[all]"
 sudo pip3 install cbor2
 ```
+
