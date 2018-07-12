@@ -2,15 +2,15 @@
 
 FogLAMP South Plugin for CoAP
 
-### Packaging for openweathermap
-This repo contains the scripts used to create a foglamp-south-openweathermap package.
+### Packaging for CoAP South
+This repo contains the scripts used to create a foglamp-south-coap package.
 
 #### The make_deb script
 ```
 $ ./make_deb help
 
  make_deb help {x86|arm} [clean|cleanall]
-This script is used to create the Debian package of foglamp south openweathermap
+This script is used to create the Debian package of foglamp south coap
 Arguments:
  help     - Display this help text
  x86      - Build an x86_64 package
