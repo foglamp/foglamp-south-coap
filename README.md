@@ -29,7 +29,7 @@ Finally, run the ``make_deb`` command:
 $ ./make_deb x86
 The package root directory is         : /home/foglamp/foglamp-south-coap
 The FogLAMP south coap version is     : 1.0.0
-The Package will be built in          : /home/foglamp/foglamp-south-coap/packages/Debian/build
+The package will be built in          : /home/foglamp/foglamp-south-coap/packages/Debian/build
 The architecture is set as            : x86_64
 The package name is                   : foglamp-south-coap-1.0.0-x86_64
 
@@ -56,7 +56,7 @@ If you execute the ``make_deb`` command again, you will see:
 $ ./make_deb x86
 The package root directory is         : /home/foglamp/foglamp-south-coap
 The FogLAMP south coap version is     : 1.0.0
-The Package will be built in          : /home/foglamp/foglamp-south-coap/packages/Debian/build
+The package will be built in          : /home/foglamp/foglamp-south-coap/packages/Debian/build
 The architecture is set as            : x86_64
 The package name is                   : foglamp-south-coap-1.0.0-x86_64
 
