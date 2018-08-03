@@ -126,7 +126,7 @@ def plugin_reconfigure(handle, new_config):
     diff = utils.get_diff(handle, new_config)
 
     # Plugin should re-initialize and restart if key configuration is changed
-    if 'port' in diff or 'uri' in diff or 'management_host' in diff:
+    if 'port' in diff or 'uri' in diff:
         _plugin_stop(handle)
         new_handle = plugin_init(new_config)
         new_handle['restart'] = 'yes'
