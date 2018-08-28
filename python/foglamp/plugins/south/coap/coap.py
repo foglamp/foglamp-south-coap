@@ -29,23 +29,27 @@ _LOGGER.setLevel(logging.INFO)
 
 _DEFAULT_CONFIG = {
     'plugin': {
-         'description': 'CoAP Listener South Plugin',
-         'type': 'string',
-         'default': 'coap'
+        'description': 'CoAP Listener South Plugin',
+        'type': 'string',
+        'default': 'coap',
+        'readonly': 'true'
     },
     'port': {
         'description': 'Port to listen on',
         'type': 'integer',
         'default': '5683',
+        'order': '1'
     },
     'uri': {
         'description': 'URI to accept data on',
         'type': 'string',
         'default': 'sensor-values',
+        'order': '2'
     }
 }
 
 aiocoap_ctx = None
+_task = None
 
 
 def plugin_info():
@@ -88,10 +92,14 @@ def plugin_start(handle):
     Returns:
     Raises:
     """
+    global _task
 
     uri = handle['uri']['value']
     port = handle['port']['value']
-    asyncio.ensure_future(_start_aiocoap(uri, port))
+    try:
+        _task = asyncio.ensure_future(_start_aiocoap(uri, port))
+    except asyncio.CancelledError:
+        pass
 
 
 async def _start_aiocoap(uri, port):
@@ -127,7 +135,7 @@ def plugin_reconfigure(handle, new_config):
 
     # Plugin should re-initialize and restart if key configuration is changed
     if 'port' in diff or 'uri' in diff:
-        _plugin_stop(handle)
+        plugin_shutdown(handle)
         new_handle = plugin_init(new_config)
         new_handle['restart'] = 'yes'
         _LOGGER.info("Restarting CoAP plugin due to change in configuration keys [{}]".format(', '.join(diff)))
@@ -154,6 +162,11 @@ def plugin_shutdown(handle):
     Returns:
     Raises:
     """
+    global _task
+    if _task is not None:
+        _task.cancel()
+        _task = None
+
     _plugin_stop(handle)
     _LOGGER.info('CoAP plugin shut down.')
 
