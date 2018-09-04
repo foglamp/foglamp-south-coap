@@ -92,11 +92,10 @@ def plugin_start(handle):
     Returns:
     Raises:
     """
-    global _task
 
     uri = handle['uri']['value']
     port = handle['port']['value']
-    _task = asyncio.ensure_future(_start_aiocoap(uri, port))
+    asyncio.ensure_future(_start_aiocoap(uri, port))
 
 
 async def _start_aiocoap(uri, port):
@@ -132,7 +131,7 @@ def plugin_reconfigure(handle, new_config):
 
     # Plugin should re-initialize and restart if key configuration is changed
     if 'port' in diff or 'uri' in diff:
-        plugin_shutdown(handle)
+        _plugin_stop(handle)
         new_handle = plugin_init(new_config)
         new_handle['restart'] = 'yes'
         _LOGGER.info("Restarting CoAP plugin due to change in configuration keys [{}]".format(', '.join(diff)))
@@ -159,14 +158,6 @@ def plugin_shutdown(handle):
     Returns:
     Raises:
     """
-    global _task
-    try:
-        if _task is not None:
-            _task.cancel()
-            _task = None
-    except asyncio.CancelledError:
-        pass
-
     _plugin_stop(handle)
     _LOGGER.info('CoAP plugin shut down.')
 
