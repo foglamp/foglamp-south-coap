@@ -96,10 +96,7 @@ def plugin_start(handle):
 
     uri = handle['uri']['value']
     port = handle['port']['value']
-    try:
-        _task = asyncio.ensure_future(_start_aiocoap(uri, port))
-    except asyncio.CancelledError:
-        pass
+    _task = asyncio.ensure_future(_start_aiocoap(uri, port))
 
 
 async def _start_aiocoap(uri, port):
@@ -163,9 +160,12 @@ def plugin_shutdown(handle):
     Raises:
     """
     global _task
-    if _task is not None:
-        _task.cancel()
-        _task = None
+    try:
+        if _task is not None:
+            _task.cancel()
+            _task = None
+    except asyncio.CancelledError:
+        pass
 
     _plugin_stop(handle)
     _LOGGER.info('CoAP plugin shut down.')
