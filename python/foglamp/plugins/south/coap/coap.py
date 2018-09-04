@@ -49,7 +49,6 @@ _DEFAULT_CONFIG = {
 }
 
 aiocoap_ctx = None
-_task = None
 
 
 def plugin_info():
