@@ -29,19 +29,22 @@ _LOGGER.setLevel(logging.INFO)
 
 _DEFAULT_CONFIG = {
     'plugin': {
-         'description': 'CoAP Listener South Plugin',
-         'type': 'string',
-         'default': 'coap'
+        'description': 'CoAP Listener South Plugin',
+        'type': 'string',
+        'default': 'coap',
+        'readonly': 'true'
     },
     'port': {
         'description': 'Port to listen on',
         'type': 'integer',
         'default': '5683',
+        'order': '1'
     },
     'uri': {
         'description': 'URI to accept data on',
         'type': 'string',
         'default': 'sensor-values',
+        'order': '2'
     }
 }
 
