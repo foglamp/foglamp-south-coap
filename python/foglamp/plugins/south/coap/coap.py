@@ -38,13 +38,15 @@ _DEFAULT_CONFIG = {
         'description': 'Port to listen on',
         'type': 'integer',
         'default': '5683',
-        'order': '1'
+        'order': '1',
+        'displayName': 'Port'
     },
     'uri': {
         'description': 'URI to accept data on',
         'type': 'string',
         'default': 'sensor-values',
-        'order': '2'
+        'order': '2',
+        'displayName': 'URI'
     }
 }
 
