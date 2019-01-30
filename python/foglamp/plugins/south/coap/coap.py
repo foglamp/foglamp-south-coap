@@ -17,7 +17,7 @@ import cbor2
 
 from foglamp.common import logger
 from foglamp.plugins.common import utils
-import ingest
+import async_ingest
 
 __author__ = "Terris Linenbach, Amarendra K Sinha"
 __copyright__ = "Copyright (c) 2017 OSIsoft, LLC"
@@ -248,7 +248,7 @@ class CoAPIngest(aiocoap.resource.Resource):
                 'key': key,
                 'readings': readings
             }
-            ingest.ingest_callback(c_callback, c_ingest_ref, data)
+            async_ingest.ingest_callback(c_callback, c_ingest_ref, data)
         except (KeyError, ValueError, TypeError) as e:
             _LOGGER.exception("%d: %s", aiocoap.numbers.codes.Code.BAD_REQUEST, str(e))
             raise aiocoap.error.BadRequest(str(e))
