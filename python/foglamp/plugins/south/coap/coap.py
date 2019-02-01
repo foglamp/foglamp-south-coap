@@ -9,6 +9,7 @@
 import asyncio
 import copy
 import logging
+from threading import Thread
 
 import aiocoap.resource
 import aiocoap.error
@@ -16,17 +17,18 @@ import cbor2
 
 from foglamp.common import logger
 from foglamp.plugins.common import utils
-from foglamp.services.south.ingest import Ingest
+import async_ingest
 
-__author__ = "Terris Linenbach"
+__author__ = "Terris Linenbach, Amarendra K Sinha"
 __copyright__ = "Copyright (c) 2017 OSIsoft, LLC"
 __license__ = "Apache 2.0"
 __version__ = "${VERSION}"
 
-_LOGGER = logger.setup(__name__)
-# We want to see informational output from this plugin
-_LOGGER.setLevel(logging.INFO)
-
+_LOGGER = logger.setup(__name__, level=logging.INFO)
+c_callback = None
+c_ingest_ref = None
+loop = None
+_task = None
 _DEFAULT_CONFIG = {
     'plugin': {
         'description': 'CoAP Listener South Plugin',
@@ -53,6 +55,19 @@ _DEFAULT_CONFIG = {
 aiocoap_ctx = None
 
 
+async def _start_aiocoap(uri, port):
+    root = aiocoap.resource.Site()
+
+    root.add_resource(('.well-known', 'core'),
+                      aiocoap.resource.WKCResource(root.get_resources_as_linkheader))
+
+    root.add_resource(('other', uri), CoAPIngest())
+
+    global aiocoap_ctx
+    aiocoap_ctx = await aiocoap.Context().create_server_context(root, bind=('::', int(port)))
+    _LOGGER.info('CoAP listener started on port {} with uri {}'.format(port, uri))
+
+
 def plugin_info():
     """ Returns information about the plugin.
 
@@ -63,7 +78,7 @@ def plugin_info():
     """
 
     return {'name': 'CoAP Plugin',
-            'version': '1.0',
+            'version': '2.0',
             'mode': 'async',
             'type': 'south',
             'interface': '1.0',
@@ -93,23 +108,21 @@ def plugin_start(handle):
     Returns:
     Raises:
     """
+    global _task, loop
+    _LOGGER.info("plugin_start called")
 
     uri = handle['uri']['value']
     port = handle['port']['value']
-    asyncio.ensure_future(_start_aiocoap(uri, port))
 
+    loop = asyncio.new_event_loop()
+    _task = asyncio.ensure_future(_start_aiocoap(uri, port), loop=loop)
 
-async def _start_aiocoap(uri, port):
-    root = aiocoap.resource.Site()
+    def run():
+        global loop
+        loop.run_forever()
 
-    root.add_resource(('.well-known', 'core'),
-                      aiocoap.resource.WKCResource(root.get_resources_as_linkheader))
-
-    root.add_resource(('other', uri), CoAPIngest())
-
-    global aiocoap_ctx
-    aiocoap_ctx = await aiocoap.Context().create_server_context(root, bind=('::', int(port)))
-    _LOGGER.info('CoAP listener started on port {} with uri {}'.format(port, uri))
+    t = Thread(target=run)
+    t.start()
 
 
 def plugin_reconfigure(handle, new_config):
@@ -127,28 +140,20 @@ def plugin_reconfigure(handle, new_config):
     """
     _LOGGER.info("Old config for CoAP plugin {} \n new config {}".format(handle, new_config))
 
-    # Find diff between old config and new config
-    diff = utils.get_diff(handle, new_config)
+    global _task, loop
 
-    # Plugin should re-initialize and restart if key configuration is changed
-    if 'port' in diff or 'uri' in diff:
-        _plugin_stop(handle)
-        new_handle = plugin_init(new_config)
-        new_handle['restart'] = 'yes'
-        _LOGGER.info("Restarting CoAP plugin due to change in configuration keys [{}]".format(', '.join(diff)))
-    else:
-        new_handle = copy.deepcopy(new_config)
-        new_handle['restart'] = 'no'
+    # plugin_shutdown
+    plugin_shutdown(handle)
+
+    # plugin_init
+    new_handle = plugin_init(new_config)
+
+    # plugin_start
+    uri = new_handle['uri']['value']
+    port = new_handle['port']['value']
+    _task = asyncio.ensure_future(_start_aiocoap(uri, port), loop=loop)
+
     return new_handle
-
-
-def _plugin_stop(handle):
-    _LOGGER.info('Stopping South CoAP plugin...')
-    try:
-        asyncio.ensure_future(aiocoap_ctx.shutdown())
-    except Exception as ex:
-        _LOGGER.exception('Error in shutting down CoAP plugin {}'.format(str(ex)))
-        raise
 
 
 def plugin_shutdown(handle):
@@ -159,8 +164,29 @@ def plugin_shutdown(handle):
     Returns:
     Raises:
     """
-    _plugin_stop(handle)
-    _LOGGER.info('CoAP plugin shut down.')
+    _LOGGER.info('Stopping South CoAP plugin...')
+    global aiocoap_ctx, _task, loop
+    try:
+        asyncio.ensure_future(aiocoap_ctx.shutdown(), loop=loop)
+        if _task is not None:
+            _task.cancel()
+            _task = None
+    except Exception as ex:
+        _LOGGER.exception('Error in shutting down CoAP plugin {}'.format(str(ex)))
+        raise
+
+
+def plugin_register_ingest(handle, callback, ingest_ref):
+    """Required plugin interface component to communicate to South C server
+
+    Args:
+        handle: handle returned by the plugin initialisation call
+        callback: C opaque object required to passed back to C->ingest method
+        ingest_ref: C opaque object required to passed back to C->ingest method
+    """
+    global c_callback, c_ingest_ref
+    c_callback = callback
+    c_ingest_ref = ingest_ref
 
 
 class CoAPIngest(aiocoap.resource.Resource):
@@ -197,10 +223,6 @@ class CoAPIngest(aiocoap.resource.Resource):
         code = aiocoap.numbers.codes.Code.VALID
         message = ''
         try:
-            if not Ingest.is_available():
-                message = '{"busy": true}'
-                raise aiocoap.error.CommunicationKilled(message)
-
             try:
                 payload = cbor2.loads(request.payload)
             except Exception:
@@ -220,16 +242,17 @@ class CoAPIngest(aiocoap.resource.Resource):
             # TODO: confirm, do we want to check this?
             if not isinstance(readings, dict):
                 raise ValueError('readings must be a dictionary')
-
-            await Ingest.add_readings(asset=asset, timestamp=timestamp, key=key, readings=readings)
-
+            data = {
+                'asset': asset,
+                'timestamp': timestamp,
+                'key': key,
+                'readings': readings
+            }
+            async_ingest.ingest_callback(c_callback, c_ingest_ref, data)
         except (KeyError, ValueError, TypeError) as e:
-            Ingest.increment_discarded_readings()
             _LOGGER.exception("%d: %s", aiocoap.numbers.codes.Code.BAD_REQUEST, str(e))
             raise aiocoap.error.BadRequest(str(e))
         except Exception as ex:
-            Ingest.increment_discarded_readings()
             _LOGGER.exception("%d: %s", aiocoap.numbers.codes.Code.INTERNAL_SERVER_ERROR, str(ex))
             raise aiocoap.error.ConstructionRenderableError(str(ex))
-
         return aiocoap.Message(payload=message.encode('utf-8'), code=code)
