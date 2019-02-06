@@ -95,7 +95,7 @@ def plugin_init(config):
         handle: JSON object to be used in future calls to the plugin
     Raises:
     """
-    handle = config
+    handle = copy.deepcopy(config)
     return handle
 
 
@@ -140,8 +140,6 @@ def plugin_reconfigure(handle, new_config):
     """
     _LOGGER.info("Old config for CoAP plugin {} \n new config {}".format(handle, new_config))
 
-    global _task, loop
-
     # plugin_shutdown
     plugin_shutdown(handle)
 
@@ -149,9 +147,7 @@ def plugin_reconfigure(handle, new_config):
     new_handle = plugin_init(new_config)
 
     # plugin_start
-    uri = new_handle['uri']['value']
-    port = new_handle['port']['value']
-    _task = asyncio.ensure_future(_start_aiocoap(uri, port), loop=loop)
+    plugin_start(new_handle)
 
     return new_handle
 
@@ -171,6 +167,7 @@ def plugin_shutdown(handle):
         if _task is not None:
             _task.cancel()
             _task = None
+        loop.stop()
     except Exception as ex:
         _LOGGER.exception('Error in shutting down CoAP plugin {}'.format(str(ex)))
         raise
