@@ -95,7 +95,7 @@ def plugin_init(config):
         handle: JSON object to be used in future calls to the plugin
     Raises:
     """
-    handle = config
+    handle = copy.deepcopy(config)
     return handle
 
 
