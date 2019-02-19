@@ -91,13 +91,13 @@ async def test_plugin_start(mocker, unused_port):
 
     # WHEN
     coap.plugin_start(config)
-    await asyncio.sleep(.3)
+    await asyncio.sleep(.3)  # required to allow ensure_future task to complete
 
     # THEN
     assert coap.aiocoap_ctx is not None
     assert 2 == log_info.call_count
-    calls = [
-        call('CoAP listener started on port {} with uri {}'.format(config['port']['value'], config['uri']['value']))]
+    calls = [call('plugin_start called'),
+             call('CoAP listener started on port {} with uri {}'.format(config['port']['value'], config['uri']['value']))]
     log_info.assert_has_calls(calls, any_order=True)
     coap.loop.stop()
     coap.t._tstate_lock = None
@@ -125,11 +125,15 @@ async def test_plugin_reconfigure(mocker, unused_port):
 
     # WHEN
     new_handle = coap.plugin_reconfigure(config, new_config)
-    await asyncio.sleep(.3)
+    await asyncio.sleep(.3)  # required to allow ensure_future task to complete
 
     # THEN
     assert new_config == new_handle
     assert 3 == log_info.call_count
+    calls = [call("Old config for CoAP plugin {} \n new config {}".format(config, new_config)),
+             call('plugin_start called'),
+             call('CoAP listener started on port 1234 with uri sensor-values')]
+    log_info.assert_has_calls(calls, any_order=True)
     assert 1 == pstop.call_count
     coap.loop.stop()
     coap.t._tstate_lock = None
@@ -154,7 +158,7 @@ async def test_plugin_shutdown(mocker, unused_port):
 
     # WHEN
     coap.plugin_start(config)
-    await asyncio.sleep(.5)
+    await asyncio.sleep(.3)  # required to allow ensure_future task to complete
     coap.plugin_shutdown(config)
 
     # THEN
