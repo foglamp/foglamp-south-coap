@@ -29,6 +29,7 @@ c_callback = None
 c_ingest_ref = None
 loop = None
 _task = None
+t = None
 _DEFAULT_CONFIG = {
     'plugin': {
         'description': 'CoAP Listener South Plugin',
@@ -108,7 +109,7 @@ def plugin_start(handle):
     Returns:
     Raises:
     """
-    global _task, loop
+    global _task, loop, t
     _LOGGER.info("plugin_start called")
 
     uri = handle['uri']['value']
