@@ -96,7 +96,6 @@ def plugin_init(config):
         handle: JSON object to be used in future calls to the plugin
     Raises:
     """
-    _LOGGER.debug("plugin_init called")
     handle = copy.deepcopy(config)
     return handle
 
@@ -111,7 +110,6 @@ def plugin_start(handle):
     Raises:
     """
     global _task, loop, t
-    _LOGGER.debug("plugin_start called")
 
     uri = handle['uri']['value']
     port = handle['port']['value']
