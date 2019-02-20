@@ -16,7 +16,7 @@ from aiocoap import message, numbers
 from unittest.mock import call, patch
 
 from python.foglamp.plugins.south.coap import coap
-from python.foglamp.plugins.south.coap.coap import CoAPIngest, async_ingest, c_callback, c_ingest_ref,_DEFAULT_CONFIG as config
+from python.foglamp.plugins.south.coap.coap import CoAPIngest, async_ingest, c_callback, c_ingest_ref, _DEFAULT_CONFIG as config
 
 
 __author__ = "Amarendra K Sinha"
