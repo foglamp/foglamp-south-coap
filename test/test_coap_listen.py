@@ -87,6 +87,7 @@ async def test_plugin_start(mocker, unused_port):
     config['uri']['value'] = config['uri']['default']
 
     log_info = mocker.patch.object(coap._LOGGER, "info")
+    log_debug = mocker.patch.object(coap._LOGGER, "debug")
     assert coap.aiocoap_ctx is None
 
     # WHEN
@@ -95,10 +96,14 @@ async def test_plugin_start(mocker, unused_port):
 
     # THEN
     assert coap.aiocoap_ctx is not None
-    assert 2 == log_info.call_count
-    calls = [call('plugin_start called'),
-             call('CoAP listener started on port {} with uri {}'.format(config['port']['value'], config['uri']['value']))]
+    assert 1 == log_debug.call_count
+    calls = [call('plugin_start called')]
+    log_debug.assert_has_calls(calls, any_order=True)
+
+    assert 1 == log_debug.call_count
+    calls = [call('CoAP listener started on port {} with uri {}'.format(config['port']['value'], config['uri']['value']))]
     log_info.assert_has_calls(calls, any_order=True)
+
     coap.loop.stop()
     coap.t._tstate_lock = None
     coap.t._stop()
@@ -120,8 +125,8 @@ async def test_plugin_reconfigure(mocker, unused_port):
     new_config = copy.deepcopy(_NEW_CONFIG)
     new_config['port']['value'] = new_config['port']['default']
     new_config['uri']['value'] = new_config['uri']['default']
-    pstop = mocker.patch.object(coap, 'plugin_shutdown', return_value=True)
     log_info = mocker.patch.object(coap._LOGGER, "info")
+    log_debug = mocker.patch.object(coap._LOGGER, "debug")
 
     # WHEN
     new_handle = coap.plugin_reconfigure(config, new_config)
@@ -129,12 +134,16 @@ async def test_plugin_reconfigure(mocker, unused_port):
 
     # THEN
     assert new_config == new_handle
+    assert 2 == log_debug.call_count
+    calls = [call('plugin_init called'), call('plugin_start called')]
+    log_debug.assert_has_calls(calls, any_order=True)
+
     assert 3 == log_info.call_count
     calls = [call("Old config for CoAP plugin {} \n new config {}".format(config, new_config)),
-             call('plugin_start called'),
+             call('Stopping South CoAP plugin...'),
              call('CoAP listener started on port 1234 with uri sensor-values')]
     log_info.assert_has_calls(calls, any_order=True)
-    assert 1 == pstop.call_count
+
     coap.loop.stop()
     coap.t._tstate_lock = None
     coap.t._stop()
@@ -155,6 +164,7 @@ async def test_plugin_shutdown(mocker, unused_port):
     config['uri']['value'] = config['uri']['default']
     log_exception = mocker.patch.object(coap._LOGGER, "exception")
     log_info = mocker.patch.object(coap._LOGGER, "info")
+    log_debug = mocker.patch.object(coap._LOGGER, "debug")
 
     # WHEN
     coap.plugin_start(config)
@@ -162,13 +172,17 @@ async def test_plugin_shutdown(mocker, unused_port):
     coap.plugin_shutdown(config)
 
     # THEN
-    assert 3 == log_info.call_count
-    calls = [call('plugin_start called'),
-             call('CoAP listener started on port {} with uri sensor-values'.format(config['port']['value'])),
+    assert 1 == log_debug.call_count
+    calls = [call('plugin_start called')]
+    log_debug.assert_has_calls(calls, any_order=True)
+
+    assert 2 == log_info.call_count
+    calls = [call('CoAP listener started on port {} with uri sensor-values'.format(config['port']['value'])),
              call('Stopping South CoAP plugin...')]
 
     log_info.assert_has_calls(calls, any_order=True)
     assert 0 == log_exception.call_count
+
     coap.loop.stop()
     coap.t._tstate_lock = None
     coap.t._stop()
