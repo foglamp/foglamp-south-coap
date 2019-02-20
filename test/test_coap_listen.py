@@ -252,3 +252,4 @@ class TestCoapSouthIngest(object):
                     r = await CoAPIngest.render_post(request)
                     assert str(excinfo).endswith('readings must be a dictionary')
                 assert 1 == log_exception.call_count
+            assert 0 == ingest_add_readings.call_count
