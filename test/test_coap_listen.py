@@ -52,6 +52,8 @@ def test_plugin_contract():
     assert callable(getattr(coap, 'plugin_shutdown'))
     assert callable(getattr(coap, 'plugin_reconfigure'))
 
+    assert callable(getattr(coap, 'plugin_register_ingest'))
+
 
 @pytest.allure.feature("unit")
 @pytest.allure.story("plugin", "south", "coap")
@@ -68,7 +70,7 @@ def test_plugin_info():
 
 @pytest.allure.feature("unit")
 @pytest.allure.story("plugin", "south", "coap")
-def test_plugin_init(mocker):
+def test_plugin_init():
     assert coap.plugin_init(config) == config
 
 
@@ -87,7 +89,6 @@ async def test_plugin_start(mocker, unused_port):
     config['uri']['value'] = config['uri']['default']
 
     log_info = mocker.patch.object(coap._LOGGER, "info")
-    log_debug = mocker.patch.object(coap._LOGGER, "debug")
     assert coap.aiocoap_ctx is None
 
     # WHEN
@@ -96,11 +97,7 @@ async def test_plugin_start(mocker, unused_port):
 
     # THEN
     assert coap.aiocoap_ctx is not None
-    assert 1 == log_debug.call_count
-    calls = [call('plugin_start called')]
-    log_debug.assert_has_calls(calls, any_order=True)
-
-    assert 1 == log_debug.call_count
+    assert 1 == log_info.call_count
     calls = [call('CoAP listener started on port {} with uri {}'.format(config['port']['value'], config['uri']['value']))]
     log_info.assert_has_calls(calls, any_order=True)
 
@@ -126,7 +123,6 @@ async def test_plugin_reconfigure(mocker, unused_port):
     new_config['port']['value'] = new_config['port']['default']
     new_config['uri']['value'] = new_config['uri']['default']
     log_info = mocker.patch.object(coap._LOGGER, "info")
-    log_debug = mocker.patch.object(coap._LOGGER, "debug")
 
     # WHEN
     new_handle = coap.plugin_reconfigure(config, new_config)
@@ -134,10 +130,8 @@ async def test_plugin_reconfigure(mocker, unused_port):
 
     # THEN
     assert new_config == new_handle
-    assert 2 == log_debug.call_count
-    calls = [call('plugin_init called'), call('plugin_start called')]
-    log_debug.assert_has_calls(calls, any_order=True)
 
+    # TODO: assert plugin_shutdown, plugin_init, plugin_start called
     assert 3 == log_info.call_count
     calls = [call("Old config for CoAP plugin {} \n new config {}".format(config, new_config)),
              call('Stopping South CoAP plugin...'),
@@ -164,23 +158,17 @@ async def test_plugin_shutdown(mocker, unused_port):
     config['uri']['value'] = config['uri']['default']
     log_exception = mocker.patch.object(coap._LOGGER, "exception")
     log_info = mocker.patch.object(coap._LOGGER, "info")
-    log_debug = mocker.patch.object(coap._LOGGER, "debug")
 
-    # WHEN
     coap.plugin_start(config)
     await asyncio.sleep(.3)  # required to allow ensure_future task to complete
+
+    # WHEN
     coap.plugin_shutdown(config)
 
     # THEN
-    assert 1 == log_debug.call_count
-    calls = [call('plugin_start called')]
-    log_debug.assert_has_calls(calls, any_order=True)
-
-    assert 2 == log_info.call_count
-    calls = [call('CoAP listener started on port {} with uri sensor-values'.format(config['port']['value'])),
-             call('Stopping South CoAP plugin...')]
-
-    log_info.assert_has_calls(calls, any_order=True)
+    assert 2 == log_info.call_count  # includes start call log as well, as a GIVEN condition
+    stop_call = [call('Stopping South CoAP plugin...')]
+    log_info.assert_has_calls(stop_call, any_order=True)
     assert 0 == log_exception.call_count
 
     coap.loop.stop()
