@@ -29,6 +29,7 @@ c_callback = None
 c_ingest_ref = None
 loop = None
 _task = None
+t = None
 _DEFAULT_CONFIG = {
     'plugin': {
         'description': 'CoAP Listener South Plugin',
@@ -108,8 +109,7 @@ def plugin_start(handle):
     Returns:
     Raises:
     """
-    global _task, loop
-    _LOGGER.info("plugin_start called")
+    global _task, loop, t
 
     uri = handle['uri']['value']
     port = handle['port']['value']
@@ -139,16 +139,9 @@ def plugin_reconfigure(handle, new_config):
     Raises:
     """
     _LOGGER.info("Old config for CoAP plugin {} \n new config {}".format(handle, new_config))
-
-    # plugin_shutdown
     plugin_shutdown(handle)
-
-    # plugin_init
     new_handle = plugin_init(new_config)
-
-    # plugin_start
     plugin_start(new_handle)
-
     return new_handle
 
 
@@ -163,11 +156,13 @@ def plugin_shutdown(handle):
     _LOGGER.info('Stopping South CoAP plugin...')
     global aiocoap_ctx, _task, loop
     try:
-        asyncio.ensure_future(aiocoap_ctx.shutdown(), loop=loop)
+        if aiocoap_ctx is not None:
+            asyncio.ensure_future(aiocoap_ctx.shutdown(), loop=loop)
         if _task is not None:
             _task.cancel()
             _task = None
-        loop.stop()
+        if loop is not None:
+            loop.stop()
     except Exception as ex:
         _LOGGER.exception('Error in shutting down CoAP plugin {}'.format(str(ex)))
         raise
