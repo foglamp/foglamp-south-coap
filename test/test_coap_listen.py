@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-# FOGLAMP_BEGIN
-# See: http://foglamp.readthedocs.io/
-# FOGLAMP_END
+# FLEDGE_BEGIN
+# See: http://fledge.readthedocs.io/
+# FLEDGE_END
 
-"""Unit test for python.foglamp.plugins.south.coap"""
+"""Unit test for python.fledge.plugins.south.coap"""
 
 import asyncio
 import copy
@@ -15,8 +15,8 @@ import aiocoap.error
 from aiocoap import message, numbers
 from unittest.mock import call, patch
 
-from python.foglamp.plugins.south.coap import coap
-from python.foglamp.plugins.south.coap.coap import CoAPIngest, async_ingest, c_callback, c_ingest_ref, _DEFAULT_CONFIG as config
+from python.fledge.plugins.south.coap import coap
+from python.fledge.plugins.south.coap.coap import CoAPIngest, async_ingest, c_callback, c_ingest_ref, _DEFAULT_CONFIG as config
 
 
 __author__ = "Amarendra K Sinha"
@@ -179,7 +179,7 @@ async def test_plugin_shutdown(mocker, unused_port):
 @pytest.allure.feature("unit")
 @pytest.allure.story("services", "south", "ingest")
 class TestCoapSouthIngest(object):
-    """Unit tests foglamp.plugins.south.coap.coap.CoAPIngest
+    """Unit tests fledge.plugins.south.coap.coap.CoAPIngest
     """
 
     @pytest.mark.asyncio

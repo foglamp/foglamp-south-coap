@@ -1,7 +1,7 @@
-foglamp-south-coap
+fledge-south-coap
 ==================
 
-FogLAMP South Plugin for CoAP
+Fledge South Plugin for CoAP
 
 Manual installation
 ^^^^^^^^^^^^^^^^^^^
